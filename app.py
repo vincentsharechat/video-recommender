@@ -192,6 +192,101 @@ def results():
     )
 
 
+@app.route("/funnel")
+def funnel():
+    """Visualization of recommendation funnel showing AI learning progression."""
+    from collections import Counter
+
+    history = session.get("history", [])
+
+    if not history:
+        return redirect(url_for("index"))
+
+    # Category colors for visualization
+    CATEGORY_COLORS = {
+        "food": "#ef4444",
+        "travel": "#3b82f6",
+        "tech": "#8b5cf6",
+        "lifestyle": "#ec4899",
+        "education": "#10b981",
+        "entertainment": "#f59e0b"
+    }
+
+    # Calculate initial distribution (all 1000 thumbnails)
+    initial_counts = Counter([v["category"] for v in THUMBNAILS_POOL])
+    initial_distribution = {}
+    for category, count in initial_counts.items():
+        initial_distribution[category] = {
+            "count": count,
+            "percentage": round((count / len(THUMBNAILS_POOL)) * 100, 1),
+            "color": CATEGORY_COLORS.get(category, "#6b7280")
+        }
+
+    # Build funnel levels for each choice
+    funnel_levels = []
+    cumulative_used_ids = []
+
+    for i, chosen_video in enumerate(history):
+        # Track used IDs up to this point
+        cumulative_used_ids.append(chosen_video["id"])
+
+        # Get remaining pool after this choice
+        remaining_pool = [v for v in THUMBNAILS_POOL if v["id"] not in cumulative_used_ids]
+
+        # Calculate category distribution in remaining pool
+        remaining_counts = Counter([v["category"] for v in remaining_pool])
+        distribution = {}
+        for category, count in remaining_counts.items():
+            distribution[category] = {
+                "count": count,
+                "percentage": round((count / len(remaining_pool)) * 100, 1) if remaining_pool else 0,
+                "color": CATEGORY_COLORS.get(category, "#6b7280")
+            }
+
+        # Calculate user's preferred category so far
+        history_so_far = history[:i+1]
+        category_preference = Counter([v["category"] for v in history_so_far])
+        preferred_category = category_preference.most_common(1)[0][0] if category_preference else None
+
+        # Generate insight about AI learning
+        if i == 0:
+            insight = f"First choice revealed interest in {chosen_video['category']} content. Filtering begins."
+        else:
+            if chosen_video["category"] == preferred_category:
+                insight = f"Confirmed preference for {preferred_category}. Narrowing focus on similar content."
+            else:
+                insight = f"Exploring {chosen_video['category']} while maintaining {preferred_category} as primary interest."
+
+        # Calculate familiarity score at this point
+        familiarity_score = calculate_familiarity_score(history_so_far)
+
+        funnel_levels.append({
+            "chosen": chosen_video,
+            "remaining": len(remaining_pool),
+            "distribution": distribution,
+            "preferred_category": preferred_category,
+            "insight": insight,
+            "familiarity_score": familiarity_score
+        })
+
+    # Final stats
+    final_category_counts = Counter([v["category"] for v in history])
+    primary_category = final_category_counts.most_common(1)[0][0] if final_category_counts else "None"
+
+    final_stats = {
+        "primary_category": primary_category,
+        "familiarity": calculate_familiarity_score(history),
+        "remaining": len([v for v in THUMBNAILS_POOL if v["id"] not in cumulative_used_ids])
+    }
+
+    return render_template(
+        "funnel.html",
+        initial_distribution=initial_distribution,
+        funnel_levels=funnel_levels,
+        final_stats=final_stats
+    )
+
+
 @app.route("/continue", methods=["POST"])
 def continue_session():
     """Continue to next round."""

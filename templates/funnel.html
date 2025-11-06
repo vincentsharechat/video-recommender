@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recommendation Funnel - AI Learning Visualization</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .funnel-layer {
+            position: relative;
+            margin: 0 auto;
+            transition: all 0.3s ease;
+        }
+        .funnel-content {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(147, 51, 234, 0.1));
+            border: 2px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 20px;
+            position: relative;
+        }
+        .selected-marker {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .category-bar {
+            height: 24px;
+            display: inline-block;
+            transition: width 0.5s ease;
+        }
+        .connector {
+            width: 2px;
+            height: 40px;
+            background: linear-gradient(to bottom, rgba(59, 130, 246, 0.5), rgba(147, 51, 234, 0.5));
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-12">
+                <h1 class="text-4xl font-bold mb-4">Recommendation Funnel</h1>
+                <p class="text-gray-400 text-lg mb-2">Watch how AI learns your preferences through progressive filtering</p>
+                <p class="text-gray-500 text-sm">From 1000 thumbnails → Personalized recommendations</p>
+
+                <div class="mt-6 flex justify-center gap-4">
+                    <a href="/" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-semibold transition-colors">
+                        Start Over
+                    </a>
+                    <a href="/results" class="px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-sm font-semibold transition-colors">
+                        View Results
+                    </a>
+                </div>
+            </div>
+
+            <!-- Funnel Visualization -->
+            <div class="space-y-8">
+                <!-- Level 0: Initial Pool -->
+                <div class="funnel-layer" style="width: 100%;">
+                    <div class="funnel-content">
+                        <div class="flex items-center justify-between mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold text-blue-400">Level 0: Initial Pool</h3>
+                                <p class="text-gray-400 text-sm">1000 diverse thumbnails across all categories</p>
+                            </div>
+                            <div class="text-3xl font-bold text-blue-400">1000</div>
+                        </div>
+
+                        <!-- Category Distribution -->
+                        <div class="space-y-2">
+                            <p class="text-xs text-gray-500 mb-2">Category Distribution:</p>
+                            <div class="flex gap-1">
+                                {% for category, data in initial_distribution.items() %}
+                                <div class="category-bar"
+                                     style="width: {{ data.percentage }}%; background-color: {{ data.color }};"
+                                     title="{{ category }}: {{ data.count }} videos ({{ data.percentage }}%)">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                {% for category, data in initial_distribution.items() %}
+                                <span class="text-xs px-2 py-1 rounded" style="background-color: {{ data.color }}20; color: {{ data.color }};">
+                                    {{ category }}: {{ data.count }} ({{ data.percentage }}%)
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="connector"></div>
+                </div>
+
+                <!-- User's Journey Levels -->
+                {% for level in funnel_levels %}
+                <div class="funnel-layer" style="width: {{ 100 - (loop.index0 * 8) }}%;">
+                    <div class="funnel-content border-purple-500">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex-1">
+                                <h3 class="text-xl font-bold text-purple-400">Level {{ loop.index }}: After Choice {{ loop.index }}</h3>
+                                <p class="text-gray-400 text-sm">{{ level.remaining }} thumbnails remaining</p>
+                            </div>
+                            <div class="text-3xl font-bold text-purple-400">{{ level.remaining }}</div>
+                        </div>
+
+                        <!-- Selected Video -->
+                        <div class="mb-4 p-3 bg-gray-800 rounded-lg border-2 border-green-500 selected-marker">
+                            <div class="flex items-center gap-3">
+                                <div class="w-16 h-12 rounded flex-shrink-0" style="background-color: {{ level.chosen.thumbnail_color }};"></div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-semibold text-green-400 truncate">✓ {{ level.chosen.title }}</p>
+                                    <p class="text-xs text-gray-400">
+                                        <span class="px-2 py-0.5 bg-gray-700 rounded">{{ level.chosen.category }}</span>
+                                        • {{ "{:,}".format(level.chosen.views) }} views
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- AI Learning Insight -->
+                        <div class="mb-3 p-3 bg-blue-900 bg-opacity-30 rounded-lg border border-blue-500">
+                            <p class="text-sm text-blue-300">
+                                <span class="font-semibold">🤖 AI Learning:</span>
+                                {{ level.insight }}
+                            </p>
+                        </div>
+
+                        <!-- Category Distribution After This Choice -->
+                        <div class="space-y-2">
+                            <p class="text-xs text-gray-500 mb-2">Refined Category Focus:</p>
+                            <div class="flex gap-1">
+                                {% for category, data in level.distribution.items() %}
+                                <div class="category-bar"
+                                     style="width: {{ data.percentage }}%; background-color: {{ data.color }};"
+                                     title="{{ category }}: {{ data.count }} videos ({{ data.percentage }}%)">
+                                </div>
+                                {% endfor %}
+                            </div>
+                            <div class="flex flex-wrap gap-2 mt-2">
+                                {% for category, data in level.distribution.items() %}
+                                <span class="text-xs px-2 py-1 rounded"
+                                      style="background-color: {{ data.color }}20; color: {{ data.color }};"
+                                      {% if category == level.preferred_category %}class="ring-2 ring-yellow-400"{% endif %}>
+                                    {{ category }}: {{ data.count }} ({{ data.percentage }}%)
+                                    {% if category == level.preferred_category %}⭐{% endif %}
+                                </span>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <!-- Familiarity Score Progress -->
+                        <div class="mt-4 p-3 bg-gray-800 rounded-lg">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm text-gray-400">AI Familiarity Score</span>
+                                <span class="text-lg font-bold text-green-400">{{ level.familiarity_score }}%</span>
+                            </div>
+                            <div class="w-full bg-gray-700 rounded-full h-2">
+                                <div class="bg-gradient-to-r from-blue-500 to-green-500 h-2 rounded-full"
+                                     style="width: {{ level.familiarity_score }}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    {% if not loop.last %}
+                    <div class="connector"></div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+
+                <!-- Final State -->
+                {% if funnel_levels %}
+                <div class="funnel-layer" style="width: {{ 100 - (funnel_levels|length * 8) }}%;">
+                    <div class="funnel-content border-green-500">
+                        <div class="text-center py-8">
+                            <div class="text-5xl mb-4">🎯</div>
+                            <h3 class="text-2xl font-bold text-green-400 mb-2">Highly Personalized</h3>
+                            <p class="text-gray-400 mb-4">
+                                AI has learned your preferences through {{ funnel_levels|length }} rounds
+                            </p>
+                            <div class="grid grid-cols-3 gap-4 text-center mt-6">
+                                <div>
+                                    <div class="text-2xl font-bold text-blue-400">{{ final_stats.primary_category }}</div>
+                                    <div class="text-xs text-gray-500">Primary Interest</div>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-purple-400">{{ final_stats.familiarity }}%</div>
+                                    <div class="text-xs text-gray-500">Familiarity Score</div>
+                                </div>
+                                <div>
+                                    <div class="text-2xl font-bold text-green-400">{{ final_stats.remaining }}</div>
+                                    <div class="text-xs text-gray-500">Videos Remaining</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Legend -->
+            <div class="mt-12 p-6 bg-gray-800 rounded-lg">
+                <h3 class="text-lg font-bold mb-4">How the Funnel Works</h3>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                        <div class="font-semibold text-blue-400 mb-1">📊 Category Distribution</div>
+                        <p class="text-gray-400">Shows the variety of content available at each level. Narrower = more focused.</p>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-purple-400 mb-1">🎯 Progressive Filtering</div>
+                        <p class="text-gray-400">Each choice eliminates used videos and focuses on your preferences.</p>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-green-400 mb-1">🤖 AI Learning</div>
+                        <p class="text-gray-400">Familiarity score increases as the system learns your taste.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
