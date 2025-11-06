@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Recommender - Choose Your First Video</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <h1 class="text-4xl font-bold mb-2 text-center">Video Recommender</h1>
+            <p class="text-gray-400 text-center mb-2">Choose your first video to get started</p>
+            <p class="text-gray-500 text-center text-sm mb-8">Claude AI will analyze your choice and recommend 3 videos from 1000 pre-generated thumbnails</p>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {% for video in videos %}
+                <form method="POST" action="/choose" class="group">
+                    <input type="hidden" name="video_id" value="{{ video.id }}">
+                    <button type="submit" class="w-full text-left transition-transform hover:scale-105">
+                        <div class="bg-gray-800 rounded-lg overflow-hidden shadow-lg hover:shadow-2xl transition-shadow">
+                            <!-- Thumbnail -->
+                            <div class="h-48 relative" style="background-color: {{ video.thumbnail_color }};">
+                                <div class="absolute inset-0 flex items-center justify-center">
+                                    <svg class="w-20 h-20 text-white opacity-80" fill="currentColor" viewBox="0 0 20 20">
+                                        <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z"/>
+                                    </svg>
+                                </div>
+                                <div class="absolute top-2 right-2 bg-black bg-opacity-70 px-2 py-1 rounded text-xs">
+                                    {{ video.duration }} min
+                                </div>
+                            </div>
+
+                            <!-- Content -->
+                            <div class="p-4">
+                                <h3 class="font-semibold text-lg mb-2 line-clamp-2">{{ video.title }}</h3>
+                                <div class="flex items-center gap-2 text-sm text-gray-400 mb-2">
+                                    <span class="bg-gray-700 px-2 py-1 rounded text-xs">{{ video.category }}</span>
+                                    <span>{{ video.creator }}</span>
+                                </div>
+                                <div class="flex items-center gap-4 text-sm text-gray-400">
+                                    <span>{{ "{:,}".format(video.views) }} views</span>
+                                    <span>{{ "{:,}".format(video.likes) }} likes</span>
+                                </div>
+                            </div>
+                        </div>
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+
+            <div class="mt-8 text-center text-gray-400 text-sm">
+                <p>After you choose, Claude AI will analyze 1000 pre-generated thumbnails and pick the 3 most relevant to your interests.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

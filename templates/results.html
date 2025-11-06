@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Recommender - Results</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- Header -->
+            <div class="text-center mb-8">
+                <h1 class="text-4xl font-bold mb-2">Your Viewing Results</h1>
+                <p class="text-gray-400">Analysis of your video preferences and Claude AI's recommendations</p>
+            </div>
+
+            <!-- Statistics Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-gray-800 rounded-lg p-6 text-center">
+                    <div class="text-4xl font-bold text-blue-400 mb-2">{{ total_rounds }}</div>
+                    <div class="text-gray-400">Total Videos Watched</div>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-6 text-center">
+                    <div class="text-4xl font-bold text-green-400 mb-2">{{ accuracy }}%</div>
+                    <div class="text-gray-400">AI Recommendation Hit Rate</div>
+                    <div class="text-xs text-gray-500 mt-1">{{ recommendation_hits }} / {{ total_rounds - 1 }} rounds</div>
+                </div>
+
+                <div class="bg-gray-800 rounded-lg p-6 text-center">
+                    <div class="text-4xl font-bold text-purple-400 mb-2">{{ category_counts|length }}</div>
+                    <div class="text-gray-400">Different Categories</div>
+                </div>
+            </div>
+
+            <!-- Category Distribution -->
+            <div class="bg-gray-800 rounded-lg p-6 mb-8">
+                <h2 class="text-2xl font-bold mb-4">Your Category Preferences</h2>
+                <div class="space-y-3">
+                    {% for category, count in category_counts.items()|sort(attribute='1', reverse=True) %}
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="font-medium capitalize">{{ category }}</span>
+                            <span class="text-gray-400">{{ count }} videos ({{ "%.1f"|format((count / total_rounds) * 100) }}%)</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="bg-blue-500 h-2 rounded-full transition-all" style="width: {{ (count / total_rounds) * 100 }}%"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Viewing History -->
+            <div class="bg-gray-800 rounded-lg p-6 mb-8">
+                <h2 class="text-2xl font-bold mb-4">Your Viewing History</h2>
+                <div class="space-y-3">
+                    {% for video in history %}
+                    <div class="flex items-center gap-4 bg-gray-700 rounded-lg p-3 hover:bg-gray-650 transition-colors">
+                        <div class="flex-shrink-0">
+                            <div class="w-20 h-14 rounded" style="background: linear-gradient(135deg, {{ video.thumbnail_color }} 0%, {{ video.thumbnail_color }}dd 100%);"></div>
+                        </div>
+                        <div class="flex-grow min-w-0">
+                            <div class="font-semibold truncate">{{ loop.index }}. {{ video.title }}</div>
+                            <div class="flex items-center gap-2 text-sm text-gray-400">
+                                <span class="bg-gray-600 px-2 py-0.5 rounded text-xs">{{ video.category }}</span>
+                                <span>{{ video.duration }} min</span>
+                            </div>
+                        </div>
+                        <div class="flex-shrink-0 text-sm text-gray-400">
+                            {% for tag in video.tags[:2] %}
+                            <span class="inline-block bg-gray-600 px-2 py-0.5 rounded-full text-xs mr-1">#{{ tag }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex justify-center gap-4">
+                <form method="POST" action="/continue">
+                    <button type="submit" class="px-8 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg font-semibold transition-colors">
+                        Continue Watching
+                    </button>
+                </form>
+                <a href="/" class="px-8 py-3 bg-gray-700 hover:bg-gray-600 rounded-lg font-semibold transition-colors">
+                    Start New Session
+                </a>
+            </div>
+
+            <!-- Insights -->
+            <div class="mt-8 bg-gray-800 rounded-lg p-6">
+                <h3 class="text-xl font-bold mb-3">AI Insights</h3>
+                <div class="space-y-2 text-gray-300">
+                    {% set top_category = category_counts.items()|sort(attribute='1', reverse=True)|first %}
+                    <p>✨ You seem to prefer <strong class="text-blue-400">{{ top_category[0] }}</strong> content ({{ top_category[1] }} videos watched)</p>
+
+                    {% if accuracy > 70 %}
+                    <p>🎯 Claude AI is learning your preferences well with {{ accuracy }}% accuracy!</p>
+                    {% elif accuracy > 40 %}
+                    <p>📈 Claude AI is getting better at understanding your taste ({{ accuracy }}% accuracy)</p>
+                    {% else %}
+                    <p>🔍 Claude AI is still learning your preferences. Keep watching to improve recommendations!</p>
+                    {% endif %}
+
+                    {% if category_counts|length > 5 %}
+                    <p>🌈 You have diverse tastes across {{ category_counts|length }} different categories</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
